@@ -1,0 +1,8 @@
+{
+  "name": "TinHocTieuHoc - Học Tin Học Lớp 3, 4, 5 AI",
+  "description": "Nền tảng học tập môn Tin học lớp 3, 4, 5 ứng dụng AI hỗ trợ giáo viên soạn bài và học sinh tiểu học luyện tập.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

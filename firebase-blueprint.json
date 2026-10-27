@@ -1,0 +1,121 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Hồ sơ người dùng tối thiểu trong hệ thống AI Tin học Tiểu học",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "displayName": { "type": "string", "maxLength": 120 },
+        "email": { "type": "string", "maxLength": 200 },
+        "role": { "type": "string", "enum": ["ADMIN", "TEACHER", "STUDENT"] },
+        "assignedGrades": { "type": "array" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "displayName", "role", "createdAt", "updatedAt"]
+    },
+    "TeachingMaterial": {
+      "title": "TeachingMaterial",
+      "description": "Siêu dữ liệu tài liệu giảng dạy môn Tin học do giáo viên tải lên",
+      "type": "object",
+      "properties": {
+        "ownerUid": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 255 },
+        "fileName": { "type": "string", "maxLength": 255 },
+        "mimeType": { "type": "string", "maxLength": 128 },
+        "storagePath": { "type": "string", "maxLength": 512 },
+        "fileSize": { "type": "integer" },
+        "grade": { "type": "integer", "enum": [3, 4, 5] },
+        "subject": { "type": "string", "maxLength": 100 },
+        "topic": { "type": "string", "maxLength": 255 },
+        "relatedLessonName": { "type": "string", "maxLength": 255 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "processingStatus": { "type": "string", "enum": ["PENDING", "PROCESSED", "FAILED"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["ownerUid", "title", "fileName", "grade", "subject", "processingStatus", "createdAt", "updatedAt"]
+    },
+    "LearningPlan": {
+      "title": "LearningPlan",
+      "description": "Cấu trúc học tập và kế hoạch bài dạy do AI đề xuất từ tài liệu",
+      "type": "object",
+      "properties": {
+        "ownerUid": { "type": "string", "maxLength": 128 },
+        "materialId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 255 },
+        "grade": { "type": "integer", "enum": [3, 4, 5] },
+        "subject": { "type": "string", "maxLength": 100 },
+        "learningObjectives": { "type": "array" },
+        "keyKnowledge": { "type": "array" },
+        "sections": { "type": "array" },
+        "status": { "type": "string", "enum": ["draft", "approved", "archived"] },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "approvedAt": { "type": "string" }
+      },
+      "required": ["ownerUid", "materialId", "title", "grade", "subject", "status", "version", "createdAt", "updatedAt"]
+    },
+    "Lesson": {
+      "title": "Lesson",
+      "description": "Bài học tương tác 4 phần GDPT 2018 đã được giáo viên phê duyệt",
+      "type": "object",
+      "properties": {
+        "ownerUid": { "type": "string", "maxLength": 128 },
+        "learningPlanId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 255 },
+        "grade": { "type": "integer", "enum": [3, 4, 5] },
+        "subject": { "type": "string", "maxLength": 100 },
+        "content": { "type": "object" },
+        "status": { "type": "string", "enum": ["draft", "published", "archived"] },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "publishedAt": { "type": "string" }
+      },
+      "required": ["ownerUid", "title", "grade", "subject", "status", "version", "createdAt", "updatedAt"]
+    },
+    "LearningResult": {
+      "title": "LearningResult",
+      "description": "Kết quả làm bài tập và luyện tập môn Tin học của học sinh",
+      "type": "object",
+      "properties": {
+        "lessonId": { "type": "string", "maxLength": 128 },
+        "activityId": { "type": "string", "maxLength": 128 },
+        "studentUid": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 120 },
+        "grade": { "type": "integer", "enum": [3, 4, 5] },
+        "score": { "type": "number" },
+        "totalQuestions": { "type": "integer" },
+        "correctAnswers": { "type": "integer" },
+        "attemptNumber": { "type": "integer" },
+        "completedAt": { "type": "string" }
+      },
+      "required": ["lessonId", "studentUid", "score", "totalQuestions", "correctAnswers", "completedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Hồ sơ người dùng cá nhân (Admin, Giáo viên, Học sinh)"
+    },
+    "/materials/{materialId}": {
+      "schema": { "$ref": "#/entities/TeachingMaterial" },
+      "description": "Metadata tài liệu giảng dạy của giáo viên"
+    },
+    "/learningPlans/{planId}": {
+      "schema": { "$ref": "#/entities/LearningPlan" },
+      "description": "Cấu trúc kế hoạch bài dạy do AI thiết kế"
+    },
+    "/lessons/{lessonId}": {
+      "schema": { "$ref": "#/entities/Lesson" },
+      "description": "Bài học tương tác chuẩn GDPT 2018 cho học sinh"
+    },
+    "/learningResults/{resultId}": {
+      "schema": { "$ref": "#/entities/LearningResult" },
+      "description": "Kết quả luyện tập cá nhân của học sinh"
+    }
+  }
+}

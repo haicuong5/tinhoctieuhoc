@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Khóa toàn bộ quyền truy cập mặc định (Default Deny Catch-all)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Các hàm kiểm tra dùng chung (Hardened Helper Primitives)
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // 2. Collection: users
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || request.auth.token.role == 'ADMIN');
+      allow list: if isSignedIn() && request.auth.token.role == 'ADMIN';
+      allow create: if isSignedIn() && isOwner(userId) 
+        && request.resource.data.role != 'ADMIN'; // Chặn tự phong Admin
+      allow update: if isSignedIn() && isOwner(userId) 
+        && request.resource.data.role == resource.data.role; // Chặn tự sửa role
+      allow delete: if isSignedIn() && request.auth.token.role == 'ADMIN';
+    }
+
+    // 3. Collection: materials (Tài liệu giáo viên)
+    match /materials/{materialId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() 
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if isSignedIn() 
+        && (resource.data.ownerUid == request.auth.uid || request.auth.token.role == 'ADMIN');
+    }
+
+    // 4. Collection: learningPlans (Cấu trúc học tập AI)
+    match /learningPlans/{planId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() 
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if isSignedIn() 
+        && (resource.data.ownerUid == request.auth.uid || request.auth.token.role == 'ADMIN');
+    }
+
+    // 5. Collection: lessons (Bài học tương tác)
+    match /lessons/{lessonId} {
+      // Học sinh chỉ được đọc bài đã xuất bản (published)
+      allow get: if isSignedIn() && (
+        resource.data.status == 'published' || 
+        resource.data.ownerUid == request.auth.uid || 
+        request.auth.token.role == 'ADMIN'
+      );
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() 
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if isSignedIn() 
+        && (resource.data.ownerUid == request.auth.uid || request.auth.token.role == 'ADMIN');
+    }
+
+    // 6. Collection: learningResults (Kết quả luyện tập)
+    match /learningResults/{resultId} {
+      allow get: if isSignedIn() && (
+        resource.data.studentUid == request.auth.uid || 
+        request.auth.token.role in ['TEACHER', 'ADMIN']
+      );
+      allow list: if isSignedIn() && (
+        request.auth.token.role in ['TEACHER', 'ADMIN'] ||
+        resource.data.studentUid == request.auth.uid
+      );
+      allow create: if isSignedIn() 
+        && request.resource.data.studentUid == request.auth.uid;
+      allow update, delete: if isSignedIn() && request.auth.token.role == 'ADMIN';
+    }
+  }
+}
